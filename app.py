@@ -213,8 +213,8 @@ searcher = Agent(
     role="🔎 Web Searcher for Budget Analysis",
     description="Specialist in retrieving and analyzing Indian Budget information.",
     instructions=[
-        "First, check if the answer can be found in the existing knowledge base.",
-        "If the information is not available in the knowledge base, automatically initiate a web search using DuckDuckGoTools.",
+        "First, check if the user answer can be found in the existing knowledge_agent.",
+        "If the information is not available in the knowledge_agent, automatically initiate a web search using DuckDuckGoTools.",
         "Prioritize Indian financial news, government websites, and international news discussing India's budget.",
         "Search specifically for documents or articles related to the Indian Union Budget, focusing on official sources from the government, reputable financial news, and analysis platforms.",
         "When searching, use keywords like 'Indian Budget Analysis', 'Union Budget India', 'Budget 2025-2026 India', along with any specific terms from the query to refine the search.",
