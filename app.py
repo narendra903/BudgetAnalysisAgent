@@ -242,7 +242,10 @@ budget_agent = Agent(
         If no data found in the Knowledge agent Automatically run the searcher agent.
     """),
     instructions=dedent("""\
+        - Start by delegating the user’s query to the 'knowledge_agent' to search the existing knowledge base, which contains official budget documents and trusted website data.
+        - Wait for the 'knowledge_agent' to provide a response before taking any further action.
         - Begin by delegating the query to the 'knowledge_agent' to check for any relevant information in the existing knowledge bases.
+        - Do not run the 'searcher' agent unless the 'knowledge_agent' explicitly fails to provide a sufficient answer, as defined above.
         - If the 'knowledge_agent' does not respond or no answer, automatically delegate the task to the 'searcher' agent to perform a web search.
         - For both agents, ensure searches are tailored with keywords like 'Indian Budget', 'Union Budget India', 'Budget Analysis', and any query-specific terms.
         - Key viewpoints from budget speeches, financial reviews, and economic think tanks.
