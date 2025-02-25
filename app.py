@@ -15,6 +15,8 @@ from agno.document.chunking.document import DocumentChunking
 from agno.models.google import Gemini
 from textwrap import dedent
 from agno.vectordb.search import SearchType
+import plotly.express as px
+import re
 
 # Load environment variables
 load_dotenv()
@@ -213,7 +215,10 @@ searcher = Agent(
     role="🔎 Web Searcher for Budget Analysis",
     description="Specialist in retrieving and analyzing Indian Budget information.",
     instructions=[
+        "Activate only when explicitly delegated a query by the 'budget_agent' after the 'knowledge_agent' fails to provide a sufficient answer from the knowledge base.",
         "First, check if the user answer can be found in the existing knowledge_agent or knowledge base.",
+        "Reputable financial news outlets (e.g., Moneycontrol, Economic Times)",
+        "Economic think tanks and analyses (e.g., NITI Aayog, IMF).",
         "If the information is not available in the knowledge_agent or knowledge base, automatically initiate a web search using DuckDuckGoTools.",
         "Prioritize Indian financial news, government websites, and international news discussing India's budget.",
         "Search specifically for documents or articles related to the Indian Union Budget, focusing on official sources from the government, reputable financial news, and analysis platforms.",
@@ -225,6 +230,9 @@ searcher = Agent(
         "Use markdown for formatting responses, incorporating bullet points for clarity and tables where data comparison is needed.",
         "If the query is ambiguous or requires further clarification, ask for more details from the user.",
         "Keep responses formal and precise, always citing or referencing the source of information when possible.",
+        "- Use bullet points for clarity."
+        - "**📈 Data Visualization** (if applicable):"
+        - "**Table**: For numerical comparisons, e.g.:"
     ],
     tools=[DuckDuckGoTools()],
     show_tool_calls=True,
@@ -255,11 +263,16 @@ budget_agent = Agent(
           - **📌 Overview**: A brief summary of the budget point in question.
           - **📊 Details**: In-depth analysis, including any numerical data, policy implications, or sector-specific impacts.
           - **✅ Conclusion**: Summarize key takeaways, expected outcomes, or areas for further research.
-          -- **Numerical Data: Tables or figures for budgetary allocations and expenditures.
+          -- **Numerical Data**: Tables or figures for budgetary allocations and expenditures.
+          -- **Sources**: Cite documents or URLs where applicable.
         - Comparisons with previous budgets for trend analysis.
         - Use markdown for formatting outputs, including bullet points, tables, or code blocks for clarity.
         - If the query lacks clarity, prompt the user for additional details or clarification.
         - Maintain a formal and professional tone in responses, always citing sources where applicable.
+        "- Use bullet points for clarity."
+        - "**📈 Data Visualization** (if applicable):"
+        - "**Table**: For numerical comparisons, "
+        - Include tables/pie charts when data is sufficient (3+ points) and relevant.
     """),
     expected_output=dedent("""\
         # {Compelling Headline}                   
@@ -329,6 +342,19 @@ if st.button("🚀 Generate Response"):
             try:
                 run_response = budget_agent.run(query, markdown=True)
                 st.markdown(run_response.content, unsafe_allow_html=True)
+                # Check for pie chart data in response
+                pie_chart_match = re.search(r"Pie Chart:.*?(?=###|\n\n|$)", run_response.content, re.DOTALL)
+                if pie_chart_match:
+                    pie_text = pie_chart_match.group()
+                    labels = []
+                    values = []
+                    for line in pie_text.split("\n")[1:]:
+                        if line.strip().startswith("-"):
+                            label, value = line.split(":")
+                            labels.append(label.strip("- ").strip())
+                            values.append(float(value.strip().replace("%", "")))
+                    fig = px.pie(values=values, names=labels, title="Budget Allocation")
+                    st.plotly_chart(fig)
             except Exception as e:
                 st.error(f"⚠️ An error occurred: {str(e)}. Please try again or contact support.")
     else:
