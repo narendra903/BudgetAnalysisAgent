@@ -197,8 +197,8 @@ knowledge_agent = Agent(
     search_knowledge=True,
     description="📖 Expert on Indian Budget Documents & Websites",
     instructions=[
-        "When answering questions, first check the knowledge base for accurate information.",
-        "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further research.",
+        "When answering user questions, first delegating the query to  knowledge base for accurate information.",
+        "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
         "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', etc.",
         "For complex queries, break them down into simpler parts if necessary.",
         "Ensure responses are accurate and reference the document or website explicitly where possible.",
@@ -213,8 +213,8 @@ searcher = Agent(
     role="🔎 Web Searcher for Budget Analysis",
     description="Specialist in retrieving and analyzing Indian Budget information.",
     instructions=[
-        "First, check if the user answer can be found in the existing knowledge_agent.",
-        "If the information is not available in the knowledge_agent, automatically initiate a web search using DuckDuckGoTools.",
+        "First, check if the user answer can be found in the existing knowledge_agent or knowledge base.",
+        "If the information is not available in the knowledge_agent or knowledge base, automatically initiate a web search using DuckDuckGoTools.",
         "Prioritize Indian financial news, government websites, and international news discussing India's budget.",
         "Search specifically for documents or articles related to the Indian Union Budget, focusing on official sources from the government, reputable financial news, and analysis platforms.",
         "When searching, use keywords like 'Indian Budget Analysis', 'Union Budget India', 'Budget 2025-2026 India', along with any specific terms from the query to refine the search.",
