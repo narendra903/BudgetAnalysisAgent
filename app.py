@@ -34,34 +34,42 @@ page_bg_css = """
     html, body, [class*="css"]  {
         min-height: 100vh;
         background: linear-gradient(to right, #f7f9fc, #ddeeff);
-        color: white;
+        color: #333;
+        font-family: 'Arial', sans-serif;
     }
     .stApp {
         background: transparent;
         min-height: 100vh;
     }
     .stTextInput>div>div>input, 
-    .stTextArea>div>div>textarea, 
-    .stButton>button {
-        background-color: rgba(255, 255, 255, 0.2) !important;
+    .stTextArea>div>div>textarea {
+        background-color: rgba(255, 255, 255, 0.9) !important;
         color: #333 !important;
-        border: 1px solid #aaccee !important;
-        border-radius: 10px;
+        border: 2px solid #aaccee !important;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    .stButton>button {
+        background-color: #008CBA;
+        color: white;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: bold;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #aaccee !important;
-        color: #333 !important;
-        border-radius: 12px;
-        font-size: 16px;
-        padding: 10px 20px;
-        transition: all 0.3s ease-in-out;
-        border: none;
+        background-color: #005F73;
+        color: #FFD700;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     h1, h2, h3 {
-        color: #444 !important;
+        color: #004d80 !important;
+        font-weight: bold;
     }
-    .st-emotion-cache-6qob1r {
-        background: rgba(255, 255, 255, 0.5) !important;
+    .st-expander {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        padding: 10px;
     }
 </style>
 """
@@ -342,26 +350,59 @@ button_css = """
 """
 st.markdown(button_css, unsafe_allow_html=True)
 
+def render_visuals(response_content):
+    pie_chart_match = re.search(r"Pie Chart:.*?(?=###|\n\n|$)", response_content, re.DOTALL)
+    if pie_chart_match:
+        pie_text = pie_chart_match.group()
+        labels = []
+        values = []
+        for line in pie_text.split("\n")[1:]:
+            if line.strip().startswith("-"):
+                label, value = line.split(":")
+                labels.append(label.strip("- ").strip())
+                values.append(float(value.strip().replace("%", "")))
+        fig = px.pie(values=values, names=labels, title="Budget Allocation", hole=0.3)
+        st.plotly_chart(fig, use_container_width=True)
+    table_match = re.search(r"\|.*?\|\n\|[-|:\s]+\|\n(.*?)(?=###|\n\n|$)", response_content, re.DOTALL)
+    if table_match:
+        table_text = table_match.group()
+        rows = [row.split("|")[1:-1] for row in table_text.strip().split("\n")]
+        df = pd.DataFrame(rows[1:], columns=[col.strip() for col in rows[0]])
+        st.table(df)
+@st.cache_data(ttl=3600)
+def run_budget_analysis(query):
+    return budget_agent.run(query, markdown=True)
+query_options = [
+    "What are the major tax changes in Budget 2025?",
+    "How much is allocated to healthcare in 2025-26?",
+    "What are the key highlights of the Budget Speech?",
+    "How is the budget distributed in 2025-26?",
+    "What do experts say about Budget 2025?"
+]
+query = st.selectbox("🔍 Select or type your budget-related query:", [""] + query_options, index=0, format_func=lambda x: "Type your own query" if x == "" else x)
+custom_query = st.text_input("Or enter a custom query:", "")
+query = custom_query if custom_query else query
+if st.button("🗑️ Clear Query"):
+    st.session_state.query = ""
+    query = ""
+
 # Button to Generate Response
 if st.button("🚀 Generate Response"):
     if query:
         with st.spinner("📊 Analyzing budget data... Please wait."):
+            status = st.empty()
+            status.text("🔍 Checking knowledge base...")
             try:
-                run_response = budget_agent.run(query, markdown=True)
-                st.markdown(run_response.content, unsafe_allow_html=True)
-                # Check for pie chart data in response
-                pie_chart_match = re.search(r"Pie Chart:.*?(?=###|\n\n|$)", run_response.content, re.DOTALL)
-                if pie_chart_match:
-                    pie_text = pie_chart_match.group()
-                    labels = []
-                    values = []
-                    for line in pie_text.split("\n")[1:]:
-                        if line.strip().startswith("-"):
-                            label, value = line.split(":")
-                            labels.append(label.strip("- ").strip())
-                            values.append(float(value.strip().replace("%", "")))
-                    fig = px.pie(values=values, names=labels, title="Budget Allocation")
-                    st.plotly_chart(fig)
+                run_response = run_budget_analysis(query)
+                status.text("✅ Analysis complete!")
+                with st.expander("📜 Full Analysis", expanded=True):
+                    st.markdown(run_response.content, unsafe_allow_html=True)
+                render_visuals(run_response.content)
+            except Exception as e:
+                status.text("❌ Error occurred.")
+                st.error(f"⚠️ An error occurred: {str(e)}.")
+                if st.button("🔄 Retry"):
+                    st.experimental_rerun()
             except Exception as e:
                 st.error(f"⚠️ An error occurred: {str(e)}. Please try again or contact support.")
     else:
