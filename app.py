@@ -108,7 +108,6 @@ async def initialize_knowledge_bases():
         "https://prsindia.org/files/budget/budget_parliament/2025/Union_Budget_Analysis_2025-26.pdf",
         "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-in/technical/alerts-hub/documents/2025/ey-union-budget-2025-alert-infra-sector.pdf",
         "https://www.indiabudget.gov.in/doc/bh1.pdf",
-        "https://www.in.kpmg.com/taxflashnews/India-Union-Budget-2025-26.pdf",
         "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/feb/doc202524496501.pdf",
         "https://www.indiabudget.gov.in/doc/AFS/allafs.pdf",
         "https://www.indiabudget.gov.in/doc/eb/alldg.pdf",
