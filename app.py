@@ -141,7 +141,9 @@ async def initialize_knowledge_bases():
     website_urls = [
         "https://www.india.gov.in/spotlight/union-budget-2025-2026",
         "https://www.india.gov.in/spotlight/union-budget-2024-25",
-        "https://www.moneycontrol.com/budget/budget-2025-speech-highlights-key-announcements-of-nirmala-sitharaman-in-union-budget-of-india-article-12926372.html"
+        "https://www.timesnownews.com/business-economy/budget",
+        "https://www.timesnownews.com/business-economy/budget/railway-budget-2025-how-much-funding-did-your-state-receive-state-wise-allocation-breakdown-here-article-117911617",
+        "https://www.moneycontrol.com/budget/budget-2025-speech-highlights-key-announcements-of-nirmala-sitharaman-in-union-budget-of-india-article-12926372.html",
     ]
 
     async with ClientSession() as session:
@@ -201,7 +203,7 @@ knowledge_agent = Agent(
     instructions=[
         "When answering user questions, first delegating the query to  knowledge base for accurate information.",
         "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
-        "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', etc.",
+        "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', Visualization,etc.",
         "For complex queries, break them down into simpler parts if necessary.",
         "Ensure responses are accurate and reference the document or website explicitly where possible.",
         "Use markdown for formatting responses, including bullet points and tables where appropriate.",
@@ -230,9 +232,9 @@ searcher = Agent(
         "Use markdown for formatting responses, incorporating bullet points for clarity and tables where data comparison is needed.",
         "If the query is ambiguous or requires further clarification, ask for more details from the user.",
         "Keep responses formal and precise, always citing or referencing the source of information when possible.",
-        "- Use bullet points for clarity."
-        - "**📈 Data Visualization** (if applicable):"
-        - "**Table**: For numerical comparisons, e.g.:"
+        "Use bullet points for clarity."
+        "**📈 Data Visualization** (if applicable)"
+        "**Table**: For numerical comparisons, e.g."
     ],
     tools=[DuckDuckGoTools()],
     show_tool_calls=True,
@@ -270,9 +272,7 @@ budget_agent = Agent(
         - If the query lacks clarity, prompt the user for additional details or clarification.
         - Maintain a formal and professional tone in responses, always citing sources where applicable.
         "- Use bullet points for clarity."
-        - "**📈 Data Visualization** (if applicable):"
-        - "**Table**: For numerical comparisons, "
-        - Include tables/pie charts when data is sufficient (3+ points) and relevant.
+        
     """),
     expected_output=dedent("""\
         # {Compelling Headline}                   
@@ -299,10 +299,16 @@ budget_agent = Agent(
         ## For technical queries:
         - Create flowchart for complex processes
         - Use code blocks for formula explanations
-        - Add footnotes for legal citations                                                                                 
+        - Add footnotes for legal citations        
+                                                                                                    
         ### Conclusion
         - Key insights and implications from the budget analysis.
         - Suggested compliance strategies.
+                           
+        ### Visualization
+        - "**📈 Data Visualization** (if applicable):"
+        - "**Table**: For numerical comparisons, "
+        - Include tables/pie charts when data is sufficient (3+ points) and relevant.
         ---
         Research conducted by Financial Agent
         Credit Rating Style Report
