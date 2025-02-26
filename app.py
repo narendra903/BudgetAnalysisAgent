@@ -153,6 +153,7 @@ async def initialize_knowledge_bases():
 
     website_knowledge_base = WebsiteKnowledgeBase(
         urls=valid_website_urls,
+        max_links=10,
         vector_db=LanceDb(
             table_name="website_documents",
             uri="tmp/lancedb",
