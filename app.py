@@ -245,7 +245,8 @@ knowledge_agent = Agent(
     search_knowledge=True,
     description="📖 Expert on Indian Budget Documents & Websites",
     instructions=[
-        "When answering user questions, first delegating the query to  knowledge base for accurate information.",
+        "When answering user questions, first delegate the query to the knowledge base and prioritize checking local PDF documents (e.g., TDS_and_TCS-rate-chart-2025.pdf and Union Budget FY25-26.pdf) for accurate information.",
+        "If the answer is not found in the local PDFs, then check other sources in the knowledge base (e.g., PDF URLs and websites).",
         "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
         "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', Visualization,etc.",
         "For complex queries, break them down into simpler parts if necessary.",
