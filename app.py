@@ -105,7 +105,7 @@ async def initialize_knowledge_bases():
     progress_bar.progress(30)
     await asyncio.sleep(1)
     status_text.text("📄 Loading Budget Local PDF Documents...")
-    # Create CSV knowledge base
+    # Create PDF knowledge base
     await asyncio.sleep(1)
     pdf_folder = Path(".")
     pdf_files = [
