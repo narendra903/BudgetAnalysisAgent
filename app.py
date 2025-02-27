@@ -1,5 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 import time
 import asyncio
@@ -12,6 +13,7 @@ from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
 from agno.document.chunking.document import DocumentChunking
+from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
 from agno.vectordb.search import SearchType
@@ -101,6 +103,39 @@ async def initialize_knowledge_bases():
         embedder=embedder,
     )
     progress_bar.progress(30)
+    await asyncio.sleep(1)
+    status_text.text("📄 Loading Budget Local PDF Documents...")
+    # Create CSV knowledge base
+    await asyncio.sleep(1)
+    pdf_folder = Path(".")
+    pdf_files = [
+        pdf_folder / "TDS_and_TCS-rate-chart-2025.pdf",  # Corrected to PDF but should be CSV
+        pdf_folder / "Union Budget FY25-26.pdf",          # Corrected to PDF but should be CSV
+    ]
+    combined_pdf_kb = []  #create a empty list to add the knowledge bases
+    for pdf_file in pdf_files:
+         pdf_kb = PDFKnowledgeBase(
+            path = pdf_file, # changed the path to be a variable for each csv file
+            vector_db= LanceDb(
+                table_name="pdf_documents",
+                uri="tmp/lancedb",
+                search_type=SearchType.vector,
+                embedder=embedder,
+            ),
+            name=f"Indian Budget PDF - {pdf_file.name}",
+            instructions=[
+                "Prioritize checking the CSV for answers.",
+                "Chunk the CSV in a way that preserves context.",
+                "Ensure important sections like summaries and conclusions remain intact.",
+                "Maintain the integrity of the logical sections if needed.",
+                "Each chunk should provide enough information to answer questions independently.",
+                "Create self-contained information units that can provide a full answer to a query.",
+            ]
+        )
+         combined_pdf_kb.append(pdf_kb) 
+    else:
+            st.warning(f"⚠️ PDF file not found: {pdf_file}")# add each knowledge base to the list
+
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
@@ -165,16 +200,22 @@ async def initialize_knowledge_bases():
         max_links=10,
         name="Indian Budget Website",
         instructions=[
-            "Extract relevant information about budget announcements, policies, and updates.",
-            "Ensure the context of each piece of information is preserved to answer queries effectively."
-            "Ensure that each extracted section preserves its original context."
+            "Focus on extracting information that directly answers user questions about the Indian Union Budget.",
+            "Prioritize sections like headlines, key findings, summaries, announcements, and data tables.",
+            "Identify and extract specific budget-related data, such as allocations, policy changes, tax reforms, or economic forecasts.",
+            "Ignore content that is not directly related to the Indian Union Budget, such as advertisements, site navigation, or unrelated news.",
+            "Ensure each extracted piece of information retains its original context and meaning, allowing it to be understood independently.",
+            "When extracting data, include any associated explanatory text or context that explains what the data means and where it comes from.",
+            "Maintain the logical flow and coherence of extracted content, avoiding fragmented or disconnected sentences.",
+            "If a section contains multiple related data points or insights, keep them together as a single coherent unit.",
+            "Extract exact information related to the user query."
         ]
     )
     progress_bar.progress(80)
 
     status_text.text("🔍 Combining Knowledge Bases...")
     combined_knowledge_base = CombinedKnowledgeBase(
-        sources=[pdf_knowledge_base, website_knowledge_base],
+        sources=[pdf_knowledge_base, website_knowledge_base] + combined_pdf_kb,
         vector_db=LanceDb(
             table_name="combined_documents",
             uri="tmp/lancedb",
