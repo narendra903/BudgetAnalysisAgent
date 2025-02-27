@@ -109,8 +109,8 @@ async def initialize_knowledge_bases():
     await asyncio.sleep(1)
     pdf_folder = Path(".")
     pdf_files = [
-        pdf_folder / "TDS_and_TCS-rate-chart-2025.pdf",  # Corrected to PDF but should be CSV
-        pdf_folder / "Union Budget FY25-26.pdf",          # Corrected to PDF but should be CSV
+        pdf_folder / "TDS_and_TCS-rate-chart-2025.pdf",
+        pdf_folder / "Union Budget FY25-26.pdf",          
     ]
     combined_pdf_kb = []  #create a empty list to add the knowledge bases
     for pdf_file in pdf_files:
@@ -124,8 +124,8 @@ async def initialize_knowledge_bases():
             ),
             name=f"Indian Budget PDF - {pdf_file.name}",
             instructions=[
-                "Prioritize checking the CSV for answers.",
-                "Chunk the CSV in a way that preserves context.",
+                "Prioritize checking the pdf for answers.",
+                "Chunk the pdf in a way that preserves context.",
                 "Ensure important sections like summaries and conclusions remain intact.",
                 "Maintain the integrity of the logical sections if needed.",
                 "Each chunk should provide enough information to answer questions independently.",
