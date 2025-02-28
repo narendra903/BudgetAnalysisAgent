@@ -110,7 +110,7 @@ async def initialize_knowledge_bases():
     pdf_folder = Path(".")
     pdf_files = [
         pdf_folder / "TDS_and_TCS-rate-chart-2025.pdf",
-        pdf_folder / "Union Budget FY25-26.pdf",          
+        pdf_folder / "Union_Budget_FY25-26.pdf",          
     ]
     combined_pdf_kb = []  #create a empty list to add the knowledge bases
     for pdf_file in pdf_files:
