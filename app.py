@@ -121,7 +121,7 @@ async def initialize_knowledge_bases():
                 search_type=SearchType.vector,
                 embedder=embedder,
             ),
-            name=Indian Budget Local PDF Documents,
+            name="Indian Budget Local PDF Documents",
             instructions=[
                 "Prioritize checking the pdf for answers.",
                 "Chunk the pdf in a way that preserves context.",
@@ -132,8 +132,9 @@ async def initialize_knowledge_bases():
             ]
         )
          combined_pdf_kb.append(pdf_kb) 
+         st.write(f"Successfully loaded {pdf_file.name}  documents")
     else:
-            st.warning(f"⚠️ PDF file not found: {pdf_file}")# add each knowledge base to the list
+            st.warning(f"⚠️ PDF file not found: {pdf_file}. Please ensure the file is in the {os.getcwd()} directory.")# add each knowledge base to the list
 
 
     status_text.text("📄 Loading Budget PDF Documents...")
