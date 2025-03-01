@@ -339,7 +339,7 @@ budget_agent = Agent(
         - Last updated timestamps for time-sensitive data                           
         ## Sources & Methodology
         - Description of research process and sources
-        - page number of pdfs and source page name and file name also
+        - page number of pdfs and source page name and file name
         ## For technical queries:
         - Create flowchart for complex processes
         - Use code blocks for formula explanations
@@ -436,12 +436,12 @@ st.sidebar.markdown("""
 st.sidebar.markdown("---")
 st.sidebar.subheader("📞 Contact")
 st.sidebar.markdown("💡 Created by: **AI & Finance Enthusiasts**")
-#st.sidebar.markdown("📩 Email: narendra.insights@gmail.com")
+st.sidebar.markdown("📩 Email: narendra.insights@gmail.com")
 
 # Footer
 st.markdown("---")
 st.markdown(
-    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | "📩 *Email: narendra.insights@gmail.com*"
+    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | "
     "[<img src='https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg' width='20' height='20'>](https://www.linkedin.com/in/nk-analytics/)"
     " Connect on LinkedIn",
     unsafe_allow_html=True,
