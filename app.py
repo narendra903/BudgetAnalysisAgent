@@ -133,9 +133,6 @@ async def initialize_knowledge_bases():
         )
          combined_pdf_kb.append(pdf_kb) 
          st.write(f"Successfully loaded {pdf_file.name}  documents")
-    else:
-            st.warning(f"⚠️ PDF file not found: {pdf_file}. Please ensure the file is in the {os.getcwd()} directory.")# add each knowledge base to the list
-
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
