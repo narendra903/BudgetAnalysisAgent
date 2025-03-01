@@ -121,7 +121,7 @@ async def initialize_knowledge_bases():
                 search_type=SearchType.vector,
                 embedder=embedder,
             ),
-            name=f"Indian Budget PDF - {pdf_file.name}",
+            name=Indian Budget Local PDF Documents,
             instructions=[
                 "Prioritize checking the pdf for answers.",
                 "Chunk the pdf in a way that preserves context.",

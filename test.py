@@ -138,12 +138,16 @@ async def initialize_knowledge_bases():
                 ]
             )
             combined_pdf_kb.append(pdf_kb)
-            st.write(f"Successfully loaded {pdf_file.name} with {len(pdf_kb)} documents")  # Debug: Show number of documents
+            st.write(f"Successfully loaded {pdf_file.name}  documents")  # Debug: Show number of documents
+            if hasattr(pdf_kb, 'vector_db') and hasattr(pdf_kb.vector_db, 'count'):
+                document_count = pdf_kb.vector_db.count(table_name="pdf_documents")
+                st.write(f"Number of documents indexed in pdf_documents: {document_count}")
+            else:
+                st.write("Unable to determine document count - check LanceDb or PDFKnowledgeBase logs")
         except Exception as e:
             st.error(f"⚠️ Error processing {pdf_file}: {str(e)}")
     else:
         st.warning(f"⚠️ PDF file not found: {pdf_file}. Please ensure the file is in the {os.getcwd()} directory.")
-
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
