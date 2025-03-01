@@ -175,6 +175,7 @@ async def initialize_knowledge_bases():
     status_text.text("🌍 Fetching Budget Website Data...")
     website_urls = [
         "https://www.india.gov.in/spotlight/union-budget-2025-2026",
+        "https://www.bajajfinserv.in/investments/income-tax-slabs",
         "https://www.india.gov.in/spotlight/union-budget-2024-25",
         "https://idronline.org/article/advocacy-government/budget-2025-understanding-social-sector-spending/?gad_source=1&gclid=CjwKCAiAlPu9BhAjEiwA5NDSA8hXbzwy3kj1HhhuaRlFZx4kgbgJsgDrPNIbigkD0WJQaocfzFZSwRoCnkYQAvD_BwE",
         "https://frontline.thehindu.com/news/india-budget-2025-key-announcements-tax-relief-agriculture-healthcare-reforms/article69167699.ece",
