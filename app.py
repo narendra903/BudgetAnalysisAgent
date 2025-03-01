@@ -163,7 +163,6 @@ async def initialize_knowledge_bases():
         urls=valid_urls,
         vector_db=vector_db,
         name="Indian Budget Records",
-        chunking_strategy=AgenticChunking(),
         instructions=[
             "For user questions first check the pdf_knowledge_base.",
             "Divide the document into chunks that maintain context around key concepts.",
