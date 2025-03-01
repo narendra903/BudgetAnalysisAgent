@@ -441,7 +441,7 @@ st.sidebar.markdown("📩 Email: narendra.insights@gmail.com")
 # Footer
 st.markdown("---")
 st.markdown(
-    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | "
+    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | 📩 Email: narendra.insights@gmail.com "
     "[<img src='https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg' width='20' height='20'>](https://www.linkedin.com/in/nk-analytics/)"
     " Connect on LinkedIn",
     unsafe_allow_html=True,
