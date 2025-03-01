@@ -12,7 +12,8 @@ from agno.embedder.google import GeminiEmbedder
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
-from agno.document.chunking.document import DocumentChunking
+#from agno.document.chunking.document import DocumentChunking
+from agno.document.chunking.agentic import AgenticChunking
 from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
@@ -163,6 +164,7 @@ async def initialize_knowledge_bases():
         urls=valid_urls,
         vector_db=vector_db,
         name="Indian Budget Records",
+        chunking_strategy=AgenticChunking(),
         instructions=[
             "For user questions first check the pdf_knowledge_base.",
             "Divide the document into chunks that maintain context around key concepts.",
@@ -192,6 +194,7 @@ async def initialize_knowledge_bases():
         vector_db=LanceDb(
             table_name="website_documents",
             uri="tmp/lancedb",
+            chunking_strategy=AgenticChunking(),
             search_type=SearchType.vector,
             embedder=embedder,
         ),
@@ -218,6 +221,7 @@ async def initialize_knowledge_bases():
             table_name="combined_documents",
             uri="tmp/lancedb",
             search_type=SearchType.vector,
+            chunking_strategy=AgenticChunking(),
             embedder=embedder,
         ),
     )
