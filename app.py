@@ -116,12 +116,12 @@ async def initialize_knowledge_bases():
          pdf_kb = PDFKnowledgeBase(
             path = pdf_file, # changed the path to be a variable for each csv file
             vector_db= LanceDb(
-                table_name="pdf_documents",
+                table_name=f"pdf_{pdf_file.stem},
                 uri="tmp/lancedb",
                 search_type=SearchType.vector,
                 embedder=embedder,
             ),
-            name="Indian Budget Local PDF Documents",
+            name=f"Indian Budget Local PDF - {pdf_file.stem}",
             chunking_strategy=DocumentChunking(chunk_size=5000,overlap=0),
             instructions=[
                 "Prioritize checking the pdf for answers.",
@@ -133,7 +133,7 @@ async def initialize_knowledge_bases():
             ]
         )
          combined_pdf_kb.append(pdf_kb) 
-         #st.write(f"Successfully loaded {pdf_file.name}  documents")
+         st.write(f"Successfully loaded {pdf_file.name}  documents")
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
