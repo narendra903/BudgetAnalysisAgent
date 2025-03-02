@@ -116,7 +116,7 @@ async def initialize_knowledge_bases():
          pdf_kb = PDFKnowledgeBase(
             path = pdf_file, # changed the path to be a variable for each csv file
             vector_db= LanceDb(
-                table_name=f"pdf_{pdf_file.stem},
+                table_name=f"pdf_{pdf_file.stem}",
                 uri="tmp/lancedb",
                 search_type=SearchType.vector,
                 embedder=embedder,
