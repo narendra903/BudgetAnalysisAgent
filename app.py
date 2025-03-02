@@ -215,7 +215,7 @@ async def initialize_knowledge_bases():
 
     status_text.text("🔍 Combining Knowledge Bases...")
     combined_knowledge_base = CombinedKnowledgeBase(
-        sources=[pdf_knowledge_base, website_knowledge_base] + combined_pdf_kb,
+        sources=[pdf_knowledge_base, website_knowledge_base,combined_pdf_kb],
         vector_db=LanceDb(
             table_name="combined_documents",
             uri="tmp/lancedb",
