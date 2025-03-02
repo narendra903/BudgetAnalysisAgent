@@ -215,7 +215,7 @@ async def initialize_knowledge_bases():
 
     status_text.text("🔍 Combining Knowledge Bases...")
     combined_knowledge_base = CombinedKnowledgeBase(
-        sources=[pdf_knowledge_base, website_knowledge_base,combined_pdf_kb],
+        sources=[pdf_knowledge_base, website_knowledge_base] + combined_pdf_kb,
         vector_db=LanceDb(
             table_name="combined_documents",
             uri="tmp/lancedb",
@@ -253,8 +253,7 @@ knowledge_agent = Agent(
         "Ensure responses are accurate and reference the document or website explicitly where possible.",
         "Use markdown for formatting responses, including bullet points and tables where appropriate.",
         "If the query seems ambiguous, ask for clarification from the user."
-    ],
-    show_tool_calls=True,
+    ]
 )
 
 searcher = Agent(
