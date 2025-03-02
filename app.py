@@ -122,6 +122,7 @@ async def initialize_knowledge_bases():
                 embedder=embedder,
             ),
             name="Indian Budget Local PDF Documents",
+            chunking_strategy=DocumentChunking(),
             instructions=[
                 "Prioritize checking the pdf for answers.",
                 "Chunk the pdf in a way that preserves context.",
@@ -163,6 +164,7 @@ async def initialize_knowledge_bases():
         urls=valid_urls,
         vector_db=vector_db,
         name="Indian Budget Records",
+        chunking_strategy=DocumentChunking(),
         instructions=[
             "For user questions first check the pdf_knowledge_base.",
             "Divide the document into chunks that maintain context around key concepts.",
