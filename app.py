@@ -253,7 +253,8 @@ knowledge_agent = Agent(
         "Ensure responses are accurate and reference the document or website explicitly where possible.",
         "Use markdown for formatting responses, including bullet points and tables where appropriate.",
         "If the query seems ambiguous, ask for clarification from the user."
-    ]
+    ],
+    show_tool_calls=True,
 )
 
 searcher = Agent(
