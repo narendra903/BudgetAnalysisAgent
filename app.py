@@ -133,7 +133,7 @@ async def initialize_knowledge_bases():
             ]
         )
          combined_pdf_kb.append(pdf_kb) 
-         st.write(f"Successfully loaded {pdf_file.name}  documents")
+         #st.write(f"Successfully loaded {pdf_file.name}  documents")
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
