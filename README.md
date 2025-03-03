@@ -78,6 +78,12 @@ We welcome contributions! Feel free to submit issues, feature requests, or PRs.
 ## 📜 License
 This project is licensed under the **MIT License**.
 
+Contact
+Creator: Narendra (AI & Finance Enthusiast)
+Email: narendra.insights@gmail.com
+LinkedIn: Narendra's Profile
+For questions, feedback, or collaboration, feel free to reach out!
+
 ---
 🚀 Built for insightful **Indian Budget Analysis** & **Financial Research**!
 
