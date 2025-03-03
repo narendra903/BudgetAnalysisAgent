@@ -12,7 +12,7 @@ from agno.embedder.google import GeminiEmbedder
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
-from agno.document.chunking.document import DocumentChunking
+#from agno.document.chunking.document import DocumentChunking
 from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
@@ -122,7 +122,6 @@ async def initialize_knowledge_bases():
                 embedder=embedder,
             ),
             name=f"Indian Budget Local PDF - {pdf_file.stem}",
-            chunking_strategy=DocumentChunking(chunk_size=5000,overlap=0),
             instructions=[
                 "Prioritize checking the pdf for answers.",
                 "Chunk the pdf in a way that preserves context.",
@@ -164,7 +163,6 @@ async def initialize_knowledge_bases():
         urls=valid_urls,
         vector_db=vector_db,
         name="Indian Budget Records",
-        chunking_strategy=DocumentChunking(chunk_size=5000,overlap=0),
         instructions=[
             "For user questions first check the pdf_knowledge_base.",
             "Divide the document into chunks that maintain context around key concepts.",
@@ -248,7 +246,7 @@ knowledge_agent = Agent(
         "When answering user questions, first delegate the query to the knowledge base and prioritize checking local PDF documents (e.g.Union Budget FY25-26.pdf) for accurate information.",
         "If the answer is not found in the local PDFs, then check other sources in the knowledge base (e.g., PDF URLs and websites).",
         "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
-        "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', 'Visualization', 'additional information' etc.",
+        "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', 'Visualization','Sources & Methodology', 'additional information' etc.",
         "For complex queries, break them down into simpler parts if necessary.",
         "Ensure responses are accurate and reference the document or website explicitly where possible.",
         "Use markdown for formatting responses, including bullet points and tables where appropriate.",
