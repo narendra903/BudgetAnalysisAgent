@@ -314,7 +314,7 @@ budget_agent = Agent(
         - Use markdown for formatting outputs, including bullet points, tables, or code blocks for clarity.
         - If the query lacks clarity, prompt the user for additional details or clarification.
         - Maintain a formal and professional tone in responses, always citing sources where applicable.
-        "- Use bullet points for clarity."
+        - Use bullet points for clarity.
         
     """),
     expected_output=dedent("""\
