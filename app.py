@@ -412,6 +412,7 @@ if st.button("🚀 Generate Response"):
         st.warning("⚠️ Please enter a query before generating a response!")
 
 # Sidebar Info
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/6/60/Indian_Rupee_symbol.svg", width=80)
 st.sidebar.header("ℹ️ About")
 st.sidebar.markdown("""
 🔹 This AI assistant provides **real-time** insights on the Indian **Union Budget 2025-26**  
