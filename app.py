@@ -412,7 +412,6 @@ if st.button("🚀 Generate Response"):
         st.warning("⚠️ Please enter a query before generating a response!")
 
 # Sidebar Info
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/6/60/Indian_Rupee_symbol.svg", width=80)
 st.sidebar.header("ℹ️ About")
 st.sidebar.markdown("""
 🔹 This AI assistant provides **real-time** insights on the Indian **Union Budget 2025-26**  
@@ -443,7 +442,7 @@ st.sidebar.markdown("📩 Email: narendra.insights@gmail.com")
 # Footer
 st.markdown("---")
 st.markdown(
-    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | 📩 Email: narendra.insights@gmail.com "
+    "🛠️ **Built with AI ** | 📅 *Updated: 2025* | "
     "[<img src='https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg' width='20' height='20'>](https://www.linkedin.com/in/nk-analytics/)"
     " Connect on LinkedIn",
     unsafe_allow_html=True,
