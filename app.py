@@ -72,7 +72,7 @@ page_bg_css = """
 st.set_page_config(page_title="💰 Budget AI Assistant", layout="centered")
 st.markdown(page_bg_css, unsafe_allow_html=True)
 
-st.title("💡 Indian Budget Analysis AI")
+st.title("💡 Indian Budget Analysis AI Agent")
 st.markdown("🚀 Ask me anything about the **Indian Union Budget 2025-26**")
 
 # Async function to fetch URLs
