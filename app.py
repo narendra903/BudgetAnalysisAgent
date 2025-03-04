@@ -12,7 +12,6 @@ from agno.embedder.google import GeminiEmbedder
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
-#from agno.document.chunking.document import DocumentChunking
 from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
@@ -23,13 +22,11 @@ import re
 # Load environment variables
 load_dotenv()
 api_key = st.secrets["GEMINI_API_KEY"]
-#api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     st.error("⚠️ API Key not found. Please set GEMINI_API_KEY in .env.")
     st.stop()
 
-
-embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768,api_key=api_key)
+embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768, api_key=api_key)
 
 # Custom CSS for gradient background
 page_bg_css = """
@@ -90,7 +87,6 @@ async def fetch_url(session, url):
         return url, None
 
 # Function to initialize knowledge bases asynchronously
-@st.cache_resource(ttl=86400)  # Cache for 24 hours
 async def initialize_knowledge_bases():
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -106,17 +102,16 @@ async def initialize_knowledge_bases():
     progress_bar.progress(30)
     await asyncio.sleep(1)
     status_text.text("📄 Loading Budget Local PDF Documents...")
-    # Create PDF knowledge base
     await asyncio.sleep(1)
     pdf_folder = Path(".")
     pdf_files = [
-        pdf_folder / "Union_Budget_FY25-26.pdf"          
+        pdf_folder / "Union_Budget_FY25-26.pdf"
     ]
-    combined_pdf_kb = []  #create a empty list to add the knowledge bases
+    combined_pdf_kb = []
     for pdf_file in pdf_files:
-         pdf_kb = PDFKnowledgeBase(
-            path = pdf_file, # changed the path to be a variable for each csv file
-            vector_db= LanceDb(
+        pdf_kb = PDFKnowledgeBase(
+            path=pdf_file,
+            vector_db=LanceDb(
                 table_name=f"pdf_{pdf_file.stem}",
                 uri="tmp/lancedb",
                 search_type=SearchType.vector,
@@ -132,14 +127,13 @@ async def initialize_knowledge_bases():
                 "Create self-contained information units that can provide a full answer to a query.",
             ]
         )
-         combined_pdf_kb.append(pdf_kb) 
-         #st.write(f"Successfully loaded {pdf_file.name}  documents")
+        combined_pdf_kb.append(pdf_kb)
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
         "https://www.indiabudget.gov.in/doc/rec/allrec.pdf",
         "https://prsindia.org/files/budget/budget_parliament/2025/Union_Budget_Analysis_2025-26.pdf",
-        "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-in/technical/alerts-hub/documents/2025/ey-union-budget-2025-alert-infra-sector.pdf",
+        "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-in/technical/alerts-hub/documents/2025/ey-union-budget-2015-alert-infra-sector.pdf",
         "https://www.indiabudget.gov.in/doc/bh1.pdf",
         "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/feb/doc202524496501.pdf",
         "https://www.indiabudget.gov.in/doc/AFS/allafs.pdf",
@@ -230,21 +224,32 @@ async def initialize_knowledge_bases():
     status_text.text("✅ Knowledge Base Loaded Successfully!")
     return combined_knowledge_base
 
-# Load knowledge base in session state
-if 'combined_knowledge_base' not in st.session_state:
+# Synchronous wrapper to run async function
+def run_async_coro(coro):
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
+        return asyncio.run(coro)
+    except RuntimeError as e:
+        if "no running event loop" in str(e):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
-    except RuntimeError:
-        # Handle the case where the event loop is already running
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
+            return loop.run_until_complete(coro)
+        raise e
 
-# Initialize Agents
+# Initialize knowledge base lazily
+def initialize_knowledge():
+    if 'combined_knowledge_base' not in st.session_state:
+        status_text = st.empty()
+        status_text.text("🔄 Initializing Vector DB...")
+        try:
+            st.session_state.combined_knowledge_base = run_async_coro(initialize_knowledge_bases())
+            status_text.text("✅ Knowledge Base Loaded Successfully!")
+        except Exception as e:
+            status_text.text(f"⚠️ Error initializing knowledge base: {str(e)}")
+            st.error(f"Failed to load knowledge base. Please try again or contact support. Error: {str(e)}")
+
+# Initialize agents
+initialize_knowledge()  # Ensure knowledge base is loaded before agents
+
 knowledge_agent = Agent(
     model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
     knowledge=st.session_state.combined_knowledge_base,
