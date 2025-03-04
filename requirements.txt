@@ -21,3 +21,4 @@ opencv-python-headless
 opensearch-py
 aiohttp
 google-genai
+plotly
