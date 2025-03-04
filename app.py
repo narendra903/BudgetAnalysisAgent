@@ -231,10 +231,17 @@ async def initialize_knowledge_bases():
 
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
-    # Run async function in Streamlit's event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
+    except RuntimeError:
+        # Handle the case where the event loop is already running
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
 
 # Initialize Agents
 knowledge_agent = Agent(
