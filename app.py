@@ -22,8 +22,8 @@ import re
 
 # Load environment variables
 load_dotenv()
-#api_key = st.secrets["GEMINI_API_KEY"]
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = st.secrets["GEMINI_API_KEY"]
+#api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     st.error("⚠️ API Key not found. Please set GEMINI_API_KEY in .env.")
     st.stop()
