@@ -90,7 +90,7 @@ async def fetch_url(session, url):
 
 # Function to initialize knowledge bases asynchronously
 @st.cache_resource(ttl=86400)  # Cache for 24 hours
-async def initialize_knowledge_bases():
+def initialize_knowledge_bases():
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -154,10 +154,15 @@ async def initialize_knowledge_bases():
         "https://www.indiabudget.gov.in/budget2024-25/doc/Key_to_Budget_Document_2024.pdf",
     ]
 
-    async with ClientSession() as session:
-        tasks = [fetch_url(session, url) for url in pdf_urls]
-        results = await asyncio.gather(*tasks)
-        valid_urls = [url for url, content in results if content is not None]
+    # Fetch PDF URLs synchronously
+    valid_urls = []
+    for url in pdf_urls:
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                valid_urls.append(url)
+        except Exception as e:
+            st.warning(f"⚠️ Error fetching {url}: {str(e)}")
 
     pdf_knowledge_base = PDFUrlKnowledgeBase(
         urls=valid_urls,
@@ -182,10 +187,15 @@ async def initialize_knowledge_bases():
         "https://www.moneycontrol.com/budget/budget-2025-speech-highlights-key-announcements-of-nirmala-sitharaman-in-union-budget-of-india-article-12926372.html"
     ]
 
-    async with ClientSession() as session:
-        tasks = [fetch_url(session, url) for url in website_urls]
-        results = await asyncio.gather(*tasks)
-        valid_website_urls = [url for url, content in results if content is not None]
+    # Fetch website URLs synchronously
+    valid_website_urls = []
+    for url in website_urls:
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                valid_website_urls.append(url)
+        except Exception as e:
+            st.warning(f"⚠️ Error fetching {url}: {str(e)}")
 
     website_knowledge_base = WebsiteKnowledgeBase(
         urls=valid_website_urls,
@@ -222,7 +232,7 @@ async def initialize_knowledge_bases():
         ),
     )
 
-    await asyncio.sleep(1)  # Simulate async loading (replace with actual async load if available)
+    time.sleep(1)  # Simulate async loading (replace with actual async load if available)
     combined_knowledge_base.load(recreate=False)
 
     progress_bar.progress(100)
@@ -231,11 +241,7 @@ async def initialize_knowledge_bases():
 
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
-    else:
-        st.session_state.combined_knowledge_base = asyncio.run(initialize_knowledge_bases())
+    st.session_state.combined_knowledge_base = initialize_knowledge_bases()
 # Initialize Agents
 knowledge_agent = Agent(
     model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
