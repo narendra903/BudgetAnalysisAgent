@@ -90,7 +90,7 @@ async def fetch_url(session, url):
 
 # Function to initialize knowledge bases asynchronously
 @st.cache_resource(ttl=86400)  # Cache for 24 hours
-def initialize_knowledge_bases_sync():
+async def initialize_knowledge_bases():
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -227,11 +227,12 @@ def initialize_knowledge_bases_sync():
 
     progress_bar.progress(100)
     status_text.text("✅ Knowledge Base Loaded Successfully!")
-    return asyncio.run(initialize_knowledge_bases())
+    return vector_db
 
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
-    st.session_state.combined_knowledge_base = initialize_knowledge_bases_sync()
+    st.session_state.combined_knowledge_base = await initialize_knowledge_bases()
+asyncio.create_task(load_knowledge_base()) 
 
 # Initialize Agents
 knowledge_agent = Agent(
