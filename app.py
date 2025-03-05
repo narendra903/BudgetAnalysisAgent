@@ -283,7 +283,7 @@ if 'is_knowledge_initialized' in st.session_state and st.session_state.is_knowle
             "If the query seems ambiguous, ask for clarification from the user."
         ]
     )
-searcher = Agent(
+    searcher = Agent(
         name="Searcher",
         model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
         role="🔎 Web Searcher for Budget Analysis",
@@ -394,7 +394,6 @@ searcher = Agent(
     )
 else:
     st.warning("⚠️ Knowledge base is not initialized. Please wait for initialization to complete.")
-    
 
 # Streamlit UI for User Input
 query = st.text_input("🔍 Enter your budget-related query:", placeholder="E.g., What are the major tax changes in Budget 2025?")
