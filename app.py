@@ -227,12 +227,15 @@ async def initialize_knowledge_bases():
 
     progress_bar.progress(100)
     status_text.text("✅ Knowledge Base Loaded Successfully!")
-    return vector_db
+    return combined_knowledge_base
 
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
-     st.session_state.combined_knowledge_base = asyncio.run(initialize_knowledge_bases())
-
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        st.session_state.combined_knowledge_base = loop.run_until_complete(initialize_knowledge_bases())
+    else:
+        st.session_state.combined_knowledge_base = asyncio.run(initialize_knowledge_bases())
 # Initialize Agents
 knowledge_agent = Agent(
     model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
