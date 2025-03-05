@@ -12,14 +12,13 @@ from agno.embedder.google import GeminiEmbedder
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
+#from agno.document.chunking.document import DocumentChunking
 from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
 from agno.vectordb.search import SearchType
 import plotly.express as px
 import re
-import json
-from datetime import datetime, timedelta
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +27,8 @@ if not api_key:
     st.error("⚠️ API Key not found. Please set GEMINI_API_KEY in .env.")
     st.stop()
 
-embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768, api_key=api_key)
+
+embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768,api_key=api_key)
 
 # Custom CSS for gradient background
 page_bg_css = """
@@ -89,6 +89,7 @@ async def fetch_url(session, url):
         return url, None
 
 # Function to initialize knowledge bases asynchronously
+@st.cache_resource(ttl=86400)  # Cache for 24 hours
 async def initialize_knowledge_bases():
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -104,41 +105,40 @@ async def initialize_knowledge_bases():
     progress_bar.progress(30)
     await asyncio.sleep(1)
     status_text.text("📄 Loading Budget Local PDF Documents...")
+    # Create PDF knowledge base
     await asyncio.sleep(1)
     pdf_folder = Path(".")
     pdf_files = [
-        pdf_folder / "Union_Budget_FY25-26.pdf"
+        pdf_folder / "Union_Budget_FY25-26.pdf"          
     ]
-    combined_pdf_kb = []
+    combined_pdf_kb = []  #create a empty list to add the knowledge bases
     for pdf_file in pdf_files:
-        try:
-            pdf_kb = PDFKnowledgeBase(
-                path=pdf_file,
-                vector_db=LanceDb(
-                    table_name=f"pdf_{pdf_file.stem}",
-                    uri="tmp/lancedb",
-                    search_type=SearchType.vector,
-                    embedder=embedder,
-                ),
-                name=f"Indian Budget Local PDF - {pdf_file.stem}",
-                instructions=[
-                    "Prioritize checking the pdf for answers.",
-                    "Chunk the pdf in a way that preserves context.",
-                    "Ensure important sections like summaries and conclusions remain intact.",
-                    "Maintain the integrity of the logical sections if needed.",
-                    "Each chunk should provide enough information to answer questions independently.",
-                    "Create self-contained information units that can provide a full answer to a query.",
-                ]
-            )
-            combined_pdf_kb.append(pdf_kb)
-        except Exception as e:
-            st.warning(f"⚠️ Failed to load {pdf_file}: {str(e)}")
+         pdf_kb = PDFKnowledgeBase(
+            path = pdf_file, # changed the path to be a variable for each csv file
+            vector_db= LanceDb(
+                table_name=f"pdf_{pdf_file.stem}",
+                uri="tmp/lancedb",
+                search_type=SearchType.vector,
+                embedder=embedder,
+            ),
+            name=f"Indian Budget Local PDF - {pdf_file.stem}",
+            instructions=[
+                "Prioritize checking the pdf for answers.",
+                "Chunk the pdf in a way that preserves context.",
+                "Ensure important sections like summaries and conclusions remain intact.",
+                "Maintain the integrity of the logical sections if needed.",
+                "Each chunk should provide enough information to answer questions independently.",
+                "Create self-contained information units that can provide a full answer to a query.",
+            ]
+        )
+         combined_pdf_kb.append(pdf_kb) 
+         #st.write(f"Successfully loaded {pdf_file.name}  documents")
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
         "https://www.indiabudget.gov.in/doc/rec/allrec.pdf",
         "https://prsindia.org/files/budget/budget_parliament/2025/Union_Budget_Analysis_2025-26.pdf",
-        "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-in/technical/alerts-hub/documents/2025/ey-union-budget-2015-alert-infra-sector.pdf",
+        "https://www.ey.com/content/dam/ey-unified-site/ey-com/en-in/technical/alerts-hub/documents/2025/ey-union-budget-2025-alert-infra-sector.pdf",
         "https://www.indiabudget.gov.in/doc/bh1.pdf",
         "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/feb/doc202524496501.pdf",
         "https://www.indiabudget.gov.in/doc/AFS/allafs.pdf",
@@ -227,173 +227,141 @@ async def initialize_knowledge_bases():
 
     progress_bar.progress(100)
     status_text.text("✅ Knowledge Base Loaded Successfully!")
-    # Save to a temporary file for persistence
-    with open("knowledge_base_cache.json", "w") as f:
-        json.dump({"initialized": True, "timestamp": datetime.now().isoformat()}, f)
-    return combined_knowledge_base
+    return vector_db
 
-# Synchronous wrapper to run async function
-def run_async_coro(coro):
-    try:
-        return asyncio.run(coro)
-    except RuntimeError as e:
-        if "no running event loop" in str(e):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop.run_until_complete(coro)
-        raise e
+# Load knowledge base in session state
+if 'combined_knowledge_base' not in st.session_state:
+    # Run async function in Streamlit's event loop
+    st.session_state.combined_knowledge_base = asyncio.run(initialize_knowledge_bases())
 
-# Initialize knowledge base lazily with timestamp check
-def initialize_knowledge():
-    cache_file = "knowledge_base_cache.json"
-    if os.path.exists(cache_file):
-        with open(cache_file, "r") as f:
-            cache_data = json.load(f)
-            last_init_time = datetime.fromisoformat(cache_data.get("timestamp", "1970-01-01T00:00:00"))
-            if datetime.now() - last_init_time < timedelta(days=1):  # Reuse if within 24 hours
-                st.session_state.is_knowledge_initialized = True
-                return
-    if 'is_knowledge_initialized' not in st.session_state or not st.session_state.is_knowledge_initialized:
-        status_text = st.empty()
-        status_text.text("🔄 Initializing Vector DB...")
-        try:
-            st.session_state.combined_knowledge_base = run_async_coro(initialize_knowledge_bases())
-            st.session_state.is_knowledge_initialized = True
-            status_text.text("✅ Knowledge Base Loaded Successfully!")
-        except Exception as e:
-            status_text.text(f"⚠️ Error initializing knowledge base: {str(e)}")
-            st.error(f"Failed to load knowledge base. Please try again or contact support. Error: {str(e)}")
+# Initialize Agents
+knowledge_agent = Agent(
+    model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
+    knowledge=st.session_state.combined_knowledge_base,
+    search_knowledge=True,
+    description="📖 Expert on Indian Budget Documents & Websites",
+    instructions=[
+        "When answering user questions, first delegate the query to the knowledge base and prioritize checking local PDF documents (e.g.Union Budget FY25-26.pdf) for accurate information.",
+        "If the answer is not found in the local PDFs, then check other sources in the knowledge base (e.g., PDF URLs and websites).",
+        "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
+        "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', 'Visualization','Sources & Methodology', 'additional information' etc.",
+        "For complex queries, break them down into simpler parts if necessary.",
+        "Ensure responses are accurate and reference the document or website explicitly where possible.",
+        "Use markdown for formatting responses, including bullet points and tables where appropriate.",
+        "If the query seems ambiguous, ask for clarification from the user."
+    ]
+)
 
-# Initialize agents above UI (one-time creation)
-initialize_knowledge()
-if 'is_knowledge_initialized' in st.session_state and st.session_state.is_knowledge_initialized:
-    knowledge_agent = Agent(
-        model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
-        knowledge=st.session_state.combined_knowledge_base,
-        search_knowledge=True,
-        description="📖 Expert on Indian Budget Documents & Websites",
-        instructions=[
-            "When answering user questions, first delegate the query to the knowledge base and prioritize checking local PDF documents (e.g.Union_Budget_FY25-26.pdf) for accurate information.",
-            "If the answer is not found in the local PDFs, then check other sources in the knowledge base (e.g., PDF URLs and websites).",
-            "If the answer is not found in the knowledge base, automatically use DuckDuckGoTools for further web research.",
-            "Present your response in a formal manner with headings like 'Overview', 'Details', 'Conclusion', 'Visualization','Sources & Methodology', 'additional information' etc.",
-            "For complex queries, break them down into simpler parts if necessary.",
-            "Ensure responses are accurate and reference the document or website explicitly where possible.",
-            "Use markdown for formatting responses, including bullet points and tables where appropriate.",
-            "If the query seems ambiguous, ask for clarification from the user."
-        ]
-    )
-    searcher = Agent(
-        name="Searcher",
-        model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
-        role="🔎 Web Searcher for Budget Analysis",
-        description="Specialist in retrieving and analyzing Indian Budget information.",
-        instructions=[
-            "Activate only when explicitly delegated a query by the 'budget_agent' after the 'knowledge_agent' fails to provide a sufficient answer from the knowledge base.",
-            "First, check if the user answer can be found in the existing knowledge_agent or knowledge base.",
-            "Reputable financial news outlets (e.g., Moneycontrol, Economic Times)",
-            "Economic think tanks and analyses (e.g., NITI Aayog, IMF).",
-            "If the information is not available in the knowledge_agent or knowledge base, automatically initiate a web search using DuckDuckGoTools.",
-            "Prioritize Indian financial news, government websites, and international news discussing India's budget.",
-            "Search specifically for documents or articles related to the Indian Union Budget, focusing on official sources from the government, reputable financial news, and analysis platforms.",
-            "When searching, use keywords like 'Indian Budget Analysis', 'Union Budget India', 'Budget 2025-2026 India', along with any specific terms from the query to refine the search.",
-            "Compile the results, summarizing key points in your response.",
-            "Focus on time-sensitive information related to budget announcements and their immediate global impact.",
-            "Maintain objectivity with a focus on data from economic think tanks and financial analysts.",
-            "Ensure that the response includes an 'Overview', 'Details' section for in-depth information, and a 'Conclusion' or 'Summary'.",
-            "Use markdown for formatting responses, incorporating bullet points for clarity and tables where data comparison is needed.",
-            "If the query is ambiguous or requires further clarification, ask for more details from the user.",
-            "Keep responses formal and precise, always citing or referencing the source of information when possible.",
-            "Use bullet points for clarity."
-            "**📈 Data Visualization** (if applicable)"
-            "**Table**: For numerical comparisons, e.g."
-        ],
-        tools=[DuckDuckGoTools()],
-        show_tool_calls=True,
-        search_knowledge=True,
-    )
-    budget_agent = Agent(
-        name="Budget Analysis Agent",
-        model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
-        team=[knowledge_agent, searcher],
-        description=dedent("""\
-            🤖 An expert analyst team dedicated to analyzing and providing insights on the Indian Budget. 
-            This agent leverages pre-existing knowledge from official documents from the knowledge base or current web-based information to deliver comprehensive budget analysis. 
-            It works in tandem with a knowledge agent for document-based queries and a searcher agent for the latest updates and analyses from the web.
-            If no data found in the Knowledge agent Automatically run the searcher agent.
-        """),
-        instructions=dedent("""\
-            - Start by delegating the user’s query to the 'knowledge_agent' to search the existing knowledge base, which contains official budget documents and trusted website data.
-            - Wait for the 'knowledge_agent' to provide a response before taking any further action.
-            - Begin by delegating the query to the 'knowledge_agent' to check for any relevant information in the existing knowledge bases.
-            - Do not run the 'searcher' agent unless the 'knowledge_agent' explicitly fails to provide a sufficient answer, as defined above.
-            - If the 'knowledge_agent' does not respond or no answer, automatically delegate the task to the 'searcher' agent to perform a web search.
-            - For both agents, ensure searches are tailored with keywords like 'Indian Budget', 'Union Budget India', 'Budget Analysis', and any query-specific terms.
-            - Key viewpoints from budget speeches, financial reviews, and economic think tanks.
-            - If the response from knowledge_agent is empty or inadequate, **run the searcher**.
-            - Stakeholder reactions: Include responses from industry bodies/opposition.
-            - Format the response with clear headings:
-              - **📌 Overview**: A brief summary of the budget point in question.
-              - **📊 Details**: In-depth analysis, including any numerical data, policy implications, or sector-specific impacts.
-              - **✅ Conclusion**: Summarize key takeaways, expected outcomes, or areas for further research.
-              -- **Numerical Data**: Tables or figures for budgetary allocations and expenditures.
-              -- **Sources**: Cite documents or URLs where applicable.
-            - Comparisons with previous budgets for trend analysis.
-            - Use markdown for formatting outputs, including bullet points, tables, or code blocks for clarity.
-            - If the query lacks clarity, prompt the user for additional details or clarification.
-            - Maintain a formal and professional tone in responses, always citing sources where applicable.
-            - Use bullet points for clarity.
-            
-        """),
-        expected_output=dedent("""\
-            # {Compelling Headline}                   
-            ### Overview
-            - Here's a brief summary of the budget analysis for the query.
-            ### Details
-            - Detailed breakdown including numbers, policies, and sector analysis.
-            ## Expert Insights
-            - Quotes from economists and market analysts
-            ## Numerical Breakdown
-            - Create comparative tables for allocations:
-                | Sector | 2024-25 | 2025-26 | Change (%) |
-                |--------|---------|---------|------------|
-                | Health | 89,000cr| 1,05,000cr | +18%     |
-            ## Geographic Distribution
-            - State-wise fund allocation patterns
-            - Special focus regions/aspirational districts
-            Always include:
-            - Reference to specific document/page numbers
-            - Source URLs for web-sourced information
-            - Last updated timestamps for time-sensitive data                           
-            ## Sources & Methodology
-            - Description of research process and sources
-            - page number of pdfs and source page name and file name
-            - website urls list 
-            ## For technical queries:
-            - Create flowchart for complex processes
-            - Use code blocks for formula explanations
-            - Add footnotes for legal citations        
+searcher = Agent(
+    name="Searcher",
+    model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
+    role="🔎 Web Searcher for Budget Analysis",
+    description="Specialist in retrieving and analyzing Indian Budget information.",
+    instructions=[
+        "Activate only when explicitly delegated a query by the 'budget_agent' after the 'knowledge_agent' fails to provide a sufficient answer from the knowledge base.",
+        "First, check if the user answer can be found in the existing knowledge_agent or knowledge base.",
+        "Reputable financial news outlets (e.g., Moneycontrol, Economic Times)",
+        "Economic think tanks and analyses (e.g., NITI Aayog, IMF).",
+        "If the information is not available in the knowledge_agent or knowledge base, automatically initiate a web search using DuckDuckGoTools.",
+        "Prioritize Indian financial news, government websites, and international news discussing India's budget.",
+        "Search specifically for documents or articles related to the Indian Union Budget, focusing on official sources from the government, reputable financial news, and analysis platforms.",
+        "When searching, use keywords like 'Indian Budget Analysis', 'Union Budget India', 'Budget 2025-2026 India', along with any specific terms from the query to refine the search.",
+        "Compile the results, summarizing key points in your response.",
+        "Focus on time-sensitive information related to budget announcements and their immediate global impact.",
+        "Maintain objectivity with a focus on data from economic think tanks and financial analysts.",
+        "Ensure that the response includes an 'Overview', 'Details' section for in-depth information, and a 'Conclusion' or 'Summary'.",
+        "Use markdown for formatting responses, incorporating bullet points for clarity and tables where data comparison is needed.",
+        "If the query is ambiguous or requires further clarification, ask for more details from the user.",
+        "Keep responses formal and precise, always citing or referencing the source of information when possible.",
+        "Use bullet points for clarity."
+        "**📈 Data Visualization** (if applicable)"
+        "**Table**: For numerical comparisons, e.g."
+    ],
+    tools=[DuckDuckGoTools()],
+    show_tool_calls=True,
+    search_knowledge=True,
+)
+
+budget_agent = Agent(
+    name="Budget Analysis Agent",
+    model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
+    team=[knowledge_agent, searcher],
+    description=dedent("""\
+        🤖 An expert analyst team dedicated to analyzing and providing insights on the Indian Budget. 
+        This agent leverages pre-existing knowledge from official documents from the knowledge base or current web-based information to deliver comprehensive budget analysis. 
+        It works in tandem with a knowledge agent for document-based queries and a searcher agent for the latest updates and analyses from the web.
+        If no data found in the Knowledge agent Automatically run the searcher agent.
+    """),
+    instructions=dedent("""\
+        - Start by delegating the user’s query to the 'knowledge_agent' to search the existing knowledge base, which contains official budget documents and trusted website data.
+        - Wait for the 'knowledge_agent' to provide a response before taking any further action.
+        - Begin by delegating the query to the 'knowledge_agent' to check for any relevant information in the existing knowledge bases.
+        - Do not run the 'searcher' agent unless the 'knowledge_agent' explicitly fails to provide a sufficient answer, as defined above.
+        - If the 'knowledge_agent' does not respond or no answer, automatically delegate the task to the 'searcher' agent to perform a web search.
+        - For both agents, ensure searches are tailored with keywords like 'Indian Budget', 'Union Budget India', 'Budget Analysis', and any query-specific terms.
+        - Key viewpoints from budget speeches, financial reviews, and economic think tanks.
+        - If the response from knowledge_agent is empty or inadequate, **run the searcher**.
+        - Stakeholder reactions: Include responses from industry bodies/opposition.
+        - Format the response with clear headings:
+          - **📌 Overview**: A brief summary of the budget point in question.
+          - **📊 Details**: In-depth analysis, including any numerical data, policy implications, or sector-specific impacts.
+          - **✅ Conclusion**: Summarize key takeaways, expected outcomes, or areas for further research.
+          -- **Numerical Data**: Tables or figures for budgetary allocations and expenditures.
+          -- **Sources**: Cite documents or URLs where applicable.
+        - Comparisons with previous budgets for trend analysis.
+        - Use markdown for formatting outputs, including bullet points, tables, or code blocks for clarity.
+        - If the query lacks clarity, prompt the user for additional details or clarification.
+        - Maintain a formal and professional tone in responses, always citing sources where applicable.
+        - Use bullet points for clarity.
+        
+    """),
+    expected_output=dedent("""\
+        # {Compelling Headline}                   
+        ### Overview
+        - Here's a brief summary of the budget analysis for the query.
+        ### Details
+        - Detailed breakdown including numbers, policies, and sector analysis.
+        ## Expert Insights
+        - Quotes from economists and market analysts
+        ## Numerical Breakdown
+        - Create comparative tables for allocations:
+            | Sector | 2024-25 | 2025-26 | Change (%) |
+            |--------|---------|---------|------------|
+            | Health | 89,000cr| 1,05,000cr | +18%     |
+        ## Geographic Distribution
+        - State-wise fund allocation patterns
+        - Special focus regions/aspirational districts
+        Always include:
+        - Reference to specific document/page numbers
+        - Source URLs for web-sourced information
+        - Last updated timestamps for time-sensitive data                           
+        ## Sources & Methodology
+        - Description of research process and sources
+        - page number of pdfs and source page name and file name
+        - website urls list 
+        ## For technical queries:
+        - Create flowchart for complex processes
+        - Use code blocks for formula explanations
+        - Add footnotes for legal citations        
                                                                                                     
-            ### Conclusion
-            - Key insights and implications from the budget analysis.
-            - Suggested compliance strategies.
-               
-            ### Visualization
-            - "**📈 Data Visualization** (if applicable):"
-            - "**Table**: For numerical comparisons, "
-            - Include tables/pie charts when data is sufficient (3+ points) and relevant.
-            ---
-            Research conducted by Financial Agent
-            Credit Rating Style Report
-            Published: {current_date}
-            Last Updated: {current_time}                                                    
-        """),
-        add_datetime_to_instructions=True,
-        markdown=True,
-        show_tool_calls=True,
-    )
-else:
-    st.warning("⚠️ Knowledge base is not initialized. Please wait for initialization to complete.")
+        ### Conclusion
+        - Key insights and implications from the budget analysis.
+        - Suggested compliance strategies.
+                           
+        ### Visualization
+        - "**📈 Data Visualization** (if applicable):"
+        - "**Table**: For numerical comparisons, "
+        - Include tables/pie charts when data is sufficient (3+ points) and relevant.
+        ---
+        Research conducted by Financial Agent
+        Credit Rating Style Report
+        Published: {current_date}
+        Last Updated: {current_time}                                                    
+    """),
+    add_datetime_to_instructions=True,
+    markdown=True,
+    show_tool_calls=True,
+)
 
 # Streamlit UI for User Input
 query = st.text_input("🔍 Enter your budget-related query:", placeholder="E.g., What are the major tax changes in Budget 2025?")
@@ -418,31 +386,28 @@ st.markdown(button_css, unsafe_allow_html=True)
 
 # Button to Generate Response
 if st.button("🚀 Generate Response"):
-    if 'is_knowledge_initialized' in st.session_state and st.session_state.is_knowledge_initialized:
-        if query:
-            with st.spinner("📊 Analyzing budget data... Please wait."):
-                try:
-                    run_response = budget_agent.run(query, markdown=True)
-                    st.markdown(run_response.content, unsafe_allow_html=True)
-                    # Check for pie chart data in response
-                    pie_chart_match = re.search(r"Pie Chart:.*?(?=###|\n\n|$)", run_response.content, re.DOTALL)
-                    if pie_chart_match:
-                        pie_text = pie_chart_match.group()
-                        labels = []
-                        values = []
-                        for line in pie_text.split("\n")[1:]:
-                            if line.strip().startswith("-"):
-                                label, value = line.split(":")
-                                labels.append(label.strip("- ").strip())
-                                values.append(float(value.strip().replace("%", "")))
-                        fig = px.pie(values=values, names=labels, title="Budget Allocation")
-                        st.plotly_chart(fig)
-                except Exception as e:
-                    st.error(f"⚠️ An error occurred: {str(e)}. Please try again or contact support.")
-        else:
-            st.warning("⚠️ Please enter a query before generating a response!")
+    if query:
+        with st.spinner("📊 Analyzing budget data... Please wait."):
+            try:
+                run_response = budget_agent.run(query, markdown=True)
+                st.markdown(run_response.content, unsafe_allow_html=True)
+                # Check for pie chart data in response
+                pie_chart_match = re.search(r"Pie Chart:.*?(?=###|\n\n|$)", run_response.content, re.DOTALL)
+                if pie_chart_match:
+                    pie_text = pie_chart_match.group()
+                    labels = []
+                    values = []
+                    for line in pie_text.split("\n")[1:]:
+                        if line.strip().startswith("-"):
+                            label, value = line.split(":")
+                            labels.append(label.strip("- ").strip())
+                            values.append(float(value.strip().replace("%", "")))
+                    fig = px.pie(values=values, names=labels, title="Budget Allocation")
+                    st.plotly_chart(fig)
+            except Exception as e:
+                st.error(f"⚠️ An error occurred: {str(e)}. Please try again or contact support.")
     else:
-        st.error("⚠️ Knowledge base initialization failed or is in progress. Please wait or refresh the page.")
+        st.warning("⚠️ Please enter a query before generating a response!")
 
 # Sidebar Info
 st.sidebar.header("ℹ️ About")
