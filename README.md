@@ -81,7 +81,7 @@ Creator: Narendra (AI & Finance Enthusiast)
 
 Email: narendra.insights@gmail.com
 
-LinkedIn: Narendra's Profile
+LinkedIn: www.linkedin.com/in/nk-analytics
 
 For questions, feedback, or collaboration, feel free to reach out!
 
