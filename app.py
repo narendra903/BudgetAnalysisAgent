@@ -3,8 +3,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import time
-import asyncio
-from aiohttp import ClientSession  # For async HTTP requests
+import requests  # For synchronous HTTP requests
 from agno.agent import Agent
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.vectordb.lancedb import LanceDb
@@ -12,7 +11,6 @@ from agno.embedder.google import GeminiEmbedder
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.knowledge.website import WebsiteKnowledgeBase
 from agno.knowledge.combined import CombinedKnowledgeBase
-#from agno.document.chunking.document import DocumentChunking
 from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.models.google import Gemini
 from textwrap import dedent
@@ -22,13 +20,12 @@ import re
 
 # Load environment variables
 load_dotenv()
-api_key = st.secrets["GEMINI_API_KEY"]
+api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 if not api_key:
-    st.error("⚠️ API Key not found. Please set GEMINI_API_KEY in .env.")
+    st.error("⚠️ API Key not found. Please set GEMINI_API_KEY in .env or Streamlit secrets.")
     st.stop()
 
-
-embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768,api_key=api_key)
+embedder = GeminiEmbedder(id="models/text-embedding-004", dimensions=768, api_key=api_key)
 
 # Custom CSS for gradient background
 page_bg_css = """
@@ -75,27 +72,27 @@ st.markdown(page_bg_css, unsafe_allow_html=True)
 st.title("💡 Indian Budget Analysis AI Agent")
 st.markdown("🚀 Ask me anything about the **Indian Union Budget 2025-26**")
 
-# Async function to fetch URLs
-async def fetch_url(session, url):
+# Synchronous function to fetch URLs
+def fetch_url(url):
     try:
-        async with session.get(url) as response:
-            if response.status == 200:
-                return url, await response.read()
-            else:
-                st.warning(f"⚠️ Failed to fetch {url}: Status {response.status}")
-                return url, None
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return url, response.content
+        else:
+            st.warning(f"⚠️ Failed to fetch {url}: Status {response.status_code}")
+            return url, None
     except Exception as e:
         st.warning(f"⚠️ Error fetching {url}: {str(e)}")
         return url, None
 
-# Function to initialize knowledge bases asynchronously
+# Function to initialize knowledge bases synchronously
 @st.cache_resource(ttl=86400)  # Cache for 24 hours
 def initialize_knowledge_bases():
     progress_bar = st.progress(0)
     status_text = st.empty()
 
     status_text.text("🔄 Initializing Vector DB...")
-    await asyncio.sleep(1)  # Simulate DB setup (replace with actual async init if available)
+    time.sleep(1)  # Simulate DB setup
     vector_db = LanceDb(
         table_name="budget",
         uri="tmp/lancedb",
@@ -103,19 +100,19 @@ def initialize_knowledge_bases():
         embedder=embedder,
     )
     progress_bar.progress(30)
-    await asyncio.sleep(1)
+    time.sleep(1)
+
     status_text.text("📄 Loading Budget Local PDF Documents...")
-    # Create PDF knowledge base
-    await asyncio.sleep(1)
+    time.sleep(1)
     pdf_folder = Path(".")
     pdf_files = [
         pdf_folder / "Union_Budget_FY25-26.pdf"          
     ]
-    combined_pdf_kb = []  #create a empty list to add the knowledge bases
+    combined_pdf_kb = []
     for pdf_file in pdf_files:
-         pdf_kb = PDFKnowledgeBase(
-            path = pdf_file, # changed the path to be a variable for each csv file
-            vector_db= LanceDb(
+        pdf_kb = PDFKnowledgeBase(
+            path=pdf_file,
+            vector_db=LanceDb(
                 table_name=f"pdf_{pdf_file.stem}",
                 uri="tmp/lancedb",
                 search_type=SearchType.vector,
@@ -131,8 +128,7 @@ def initialize_knowledge_bases():
                 "Create self-contained information units that can provide a full answer to a query.",
             ]
         )
-         combined_pdf_kb.append(pdf_kb) 
-         #st.write(f"Successfully loaded {pdf_file.name}  documents")
+        combined_pdf_kb.append(pdf_kb)
 
     status_text.text("📄 Loading Budget PDF Documents...")
     pdf_urls = [
@@ -154,15 +150,8 @@ def initialize_knowledge_bases():
         "https://www.indiabudget.gov.in/budget2024-25/doc/Key_to_Budget_Document_2024.pdf",
     ]
 
-    # Fetch PDF URLs synchronously
-    valid_urls = []
-    for url in pdf_urls:
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                valid_urls.append(url)
-        except Exception as e:
-            st.warning(f"⚠️ Error fetching {url}: {str(e)}")
+    results = [fetch_url(url) for url in pdf_urls]
+    valid_urls = [url for url, content in results if content is not None]
 
     pdf_knowledge_base = PDFUrlKnowledgeBase(
         urls=valid_urls,
@@ -187,15 +176,8 @@ def initialize_knowledge_bases():
         "https://www.moneycontrol.com/budget/budget-2025-speech-highlights-key-announcements-of-nirmala-sitharaman-in-union-budget-of-india-article-12926372.html"
     ]
 
-    # Fetch website URLs synchronously
-    valid_website_urls = []
-    for url in website_urls:
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                valid_website_urls.append(url)
-        except Exception as e:
-            st.warning(f"⚠️ Error fetching {url}: {str(e)}")
+    website_results = [fetch_url(url) for url in website_urls]
+    valid_website_urls = [url for url, content in website_results if content is not None]
 
     website_knowledge_base = WebsiteKnowledgeBase(
         urls=valid_website_urls,
@@ -232,7 +214,7 @@ def initialize_knowledge_bases():
         ),
     )
 
-    time.sleep(1)  # Simulate async loading (replace with actual async load if available)
+    time.sleep(1)  # Simulate loading
     combined_knowledge_base.load(recreate=False)
 
     progress_bar.progress(100)
@@ -242,7 +224,8 @@ def initialize_knowledge_bases():
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
     st.session_state.combined_knowledge_base = initialize_knowledge_bases()
-# Initialize Agents
+
+# Initialize Agents (rest of the code remains the same)
 knowledge_agent = Agent(
     model=Gemini(id="gemini-2.0-flash-exp", api_key=api_key),
     knowledge=st.session_state.combined_knowledge_base,
