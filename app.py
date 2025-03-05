@@ -227,14 +227,11 @@ async def initialize_knowledge_bases():
 
     progress_bar.progress(100)
     status_text.text("✅ Knowledge Base Loaded Successfully!")
-    return vector_db
+    return asyncio.run(initialize_knowledge_bases())
 
 # Load knowledge base in session state
 if 'combined_knowledge_base' not in st.session_state:
-    async def load_knowledge_base():
-        st.session_state.combined_knowledge_base = await initialize_knowledge_bases()
-
-    asyncio.create_task(load_knowledge_base())  # Schedule the async function
+    st.session_state.combined_knowledge_base = initialize_knowledge_bases_sync()
 
 # Initialize Agents
 knowledge_agent = Agent(
