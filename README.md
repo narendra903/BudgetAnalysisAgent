@@ -20,13 +20,11 @@ The **Indian Budget Analysis AI Assistant** is a Streamlit-based AI-powered tool
 - **Agno AI** (AI agent framework)
 - **LanceDB** (Vector database for knowledge storage)
 - **Gemini AI** (Google AI models for embeddings and responses)
-- **AsyncIO & AIOHTTP** (For async URL fetching and data retrieval)
-- **Plotly** (For visual data representation)
 
 ## 📂 Project Structure
 ```
 📦 Indian-Budget-AI
-├── 📜 main.py          # Main Streamlit application
+├── 📜 app.py          # Main Streamlit application
 ├── 📜 .env             # Environment variables (API keys)
 ├── 📜 requirements.txt # Dependencies
 ├── 📜 README.md        # Documentation
