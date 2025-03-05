@@ -90,7 +90,7 @@ async def fetch_url(session, url):
 
 # Function to initialize knowledge bases asynchronously
 @st.cache_resource(ttl=86400)  # Cache for 24 hours
-async def initialize_knowledge_bases():
+def initialize_knowledge_bases_sync():
     progress_bar = st.progress(0)
     status_text = st.empty()
 
